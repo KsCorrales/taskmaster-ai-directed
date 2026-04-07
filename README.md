@@ -1,4 +1,35 @@
-## Objective
+# TaskMaster — Full-Stack Todo Application
+
+## Project READMEs
+
+Each project has its own README with setup instructions, architecture diagrams, and testing details:
+
+- **Backend:** [`backend/README.md`](backend/README.md) — Laravel 13 REST API: routes, layers, request→response flow, environment setup, and test suite
+- **Frontend:** [`frontend/README.md`](frontend/README.md) — Nuxt 3 app: proxy architecture, Vuex store, component structure, theming, and test suite
+
+---
+
+## What Was Built
+
+### Backend — Laravel 13 REST API
+- **4 endpoints:** `GET /api/todos`, `POST /api/todos`, `PUT /api/todos/{id}`, `DELETE /api/todos/{id}`
+- **SQLite** database via Laravel migrations and Eloquent ORM
+- **DDD-style layering:** `Controller → Service → Eloquent Model` — no business logic in controllers
+- **Filter support:** `GET /api/todos?filter=active|completed` using Laravel's `when()` query builder
+- **Validation** on all mutating endpoints with proper `422` responses; `404` for missing resources; `500` for model-event failures
+- **33 tests, 95 assertions** — all passing
+
+### Frontend — Nuxt 3 + Vuex
+- **Nuxt server proxy layer** — the browser never talks to Laravel directly; all requests go through `server/api/todos/`
+- **Vuex** store with namespaced `todos` module: `state`, `mutations`, `getters`, `actions`
+- **Backend filtering** — selecting All / Active / Completed triggers a re-fetch via the Laravel filter endpoint (`setFilter` action)
+- **4 components:** `TodoForm`, `TodoItem`, `TodoList`, `TodoFilter`
+- **Light / dark theme** toggle with hero background image swap; Josefin Sans font; responsive at 375px and 1440px
+- **62 tests** — all passing
+
+---
+
+## Assessment
 
 The objective of this challenge is to build a full-stack todo application utilizing Laravel as the back-end API and Nuxt for the front-end.
 
