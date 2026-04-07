@@ -48,6 +48,7 @@ Follow these steps **in order**. Do not skip or reorder them.
 ## Anti-patterns to avoid
 - No business logic in controllers
 - No duplicated validation rules — use Form Requests
+- Always apply `max:255` to any string column that maps to a standard `VARCHAR(255)` — never leave string fields unbounded
 - No raw `response()->json()` scattered everywhere — use a shared response helper
 - No fat models — models are for relationships and scopes only
 
@@ -59,7 +60,7 @@ When working on anything in the `Todo` domain, respect this structure:
 | Column | Type | Notes |
 |---|---|---|
 | `id` | integer | auto-increment PK |
-| `content` | string | required, the task text |
+| `content` | string | required, the task text; max 255 characters |
 | `status` | boolean | default `false` (active/incomplete); `true` = completed |
 | `created_at` / `updated_at` | timestamps | standard Laravel timestamps |
 
