@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createStore } from 'vuex'
 import { todosModule, type TodoState } from '~/store/todos'
 
+// Must be at top level — vi.mock is hoisted by Vitest before any imports
+vi.mock('~/utils/todos', () => ({
+  getTodos: vi.fn(),
+  createTodo: vi.fn(),
+  updateTodo: vi.fn(),
+  deleteTodo: vi.fn(),
+}))
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -183,13 +191,6 @@ describe('Vuex todos store — getters', () => {
 // ---------------------------------------------------------------------------
 
 describe('Vuex todos store — actions', () => {
-  // Mock the utils module so tests don't make real HTTP calls
-  vi.mock('~/utils/todos', () => ({
-    getTodos: vi.fn(),
-    createTodo: vi.fn(),
-    updateTodo: vi.fn(),
-    deleteTodo: vi.fn(),
-  }))
 
   beforeEach(() => { vi.clearAllMocks() })
 

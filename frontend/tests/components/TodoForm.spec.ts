@@ -1,17 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import TodoForm from '~/components/TodoForm.vue'
 
-const makeStore = (dispatch = vi.fn()) =>
-  createStore({ dispatch })
+// The component dispatches to the `todos` namespace, so the store needs
+// a namespaced todos module. We spy on dispatch after creation.
+const makeStore = () => {
+  const store = createStore({
+    modules: {
+      todos: {
+        namespaced: true,
+        state: () => ({}),
+        actions: { addTodo: () => {} },
+      },
+    },
+  })
+  vi.spyOn(store, 'dispatch')
+  return store
+}
 
 describe('TodoForm', () => {
   /**
    * The input must always be visible — it's the primary way to add todos.
    */
   it('renders an input with the correct placeholder', () => {
-    const wrapper = mount(TodoForm, { global: { plugins: [makeStore()] } })
+    const store = makeStore()
+    const wrapper = mount(TodoForm, { global: { plugins: [store] } })
     const input = wrapper.find('input')
     expect(input.exists()).toBe(true)
     expect(input.attributes('placeholder')).toContain('Create a new todo')
@@ -21,14 +35,14 @@ describe('TodoForm', () => {
    * Submitting a non-empty value must dispatch addTodo and clear the input.
    */
   it('dispatches addTodo and clears input on Enter', async () => {
-    const dispatch = vi.fn()
-    const wrapper = mount(TodoForm, { global: { plugins: [makeStore(dispatch)] } })
+    const store = makeStore()
+    const wrapper = mount(TodoForm, { global: { plugins: [store] } })
     const input = wrapper.find('input')
 
     await input.setValue('Buy milk')
     await input.trigger('keyup.enter')
 
-    expect(dispatch).toHaveBeenCalledWith('todos/addTodo', 'Buy milk')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/addTodo', 'Buy milk')
     expect((input.element as HTMLInputElement).value).toBe('')
   })
 
@@ -37,18 +51,18 @@ describe('TodoForm', () => {
    * dispatch — we don't want blank todos created.
    */
   it('does not dispatch when input is empty', async () => {
-    const dispatch = vi.fn()
-    const wrapper = mount(TodoForm, { global: { plugins: [makeStore(dispatch)] } })
+    const store = makeStore()
+    const wrapper = mount(TodoForm, { global: { plugins: [store] } })
     await wrapper.find('input').trigger('keyup.enter')
-    expect(dispatch).not.toHaveBeenCalled()
+    expect(store.dispatch).not.toHaveBeenCalled()
   })
 
   it('does not dispatch when input is only whitespace', async () => {
-    const dispatch = vi.fn()
-    const wrapper = mount(TodoForm, { global: { plugins: [makeStore(dispatch)] } })
+    const store = makeStore()
+    const wrapper = mount(TodoForm, { global: { plugins: [store] } })
     await wrapper.find('input').setValue('   ')
     await wrapper.find('input').trigger('keyup.enter')
-    expect(dispatch).not.toHaveBeenCalled()
+    expect(store.dispatch).not.toHaveBeenCalled()
   })
 
   /**
@@ -56,10 +70,10 @@ describe('TodoForm', () => {
    * so "  Buy milk  " becomes "Buy milk".
    */
   it('trims whitespace from the input before dispatching', async () => {
-    const dispatch = vi.fn()
-    const wrapper = mount(TodoForm, { global: { plugins: [makeStore(dispatch)] } })
+    const store = makeStore()
+    const wrapper = mount(TodoForm, { global: { plugins: [store] } })
     await wrapper.find('input').setValue('  Buy milk  ')
     await wrapper.find('input').trigger('keyup.enter')
-    expect(dispatch).toHaveBeenCalledWith('todos/addTodo', 'Buy milk')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/addTodo', 'Buy milk')
   })
 })
