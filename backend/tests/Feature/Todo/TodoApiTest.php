@@ -203,4 +203,169 @@ class TodoApiTest extends TestCase
              ->assertCreated()
              ->assertJsonStructure(['id', 'content', 'status', 'created_at', 'updated_at']);
     }
+
+    // -------------------------------------------------------------------------
+    // PUT /api/todos/{id}
+    // -------------------------------------------------------------------------
+
+    /**
+     * Happy path: update both content and status — response must reflect
+     * the new values and the record must be persisted correctly.
+     */
+    public function test_put_todo_updates_both_fields(): void
+    {
+        $todo = Todo::factory()->create(['content' => 'Old content', 'status' => false]);
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => 'New content', 'status' => true])
+             ->assertOk()
+             ->assertJsonPath('content', 'New content')
+             ->assertJsonPath('status', true);
+
+        $this->assertDatabaseHas('todos', ['id' => $todo->id, 'content' => 'New content', 'status' => true]);
+    }
+
+    /**
+     * Partial update: only content supplied — status must remain unchanged.
+     * PUT here behaves as a partial update because forcing all fields
+     * would break the simple toggle-status UX on the frontend.
+     */
+    public function test_put_todo_updates_only_content_when_status_omitted(): void
+    {
+        $todo = Todo::factory()->create(['content' => 'Old', 'status' => true]);
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => 'Updated'])
+             ->assertOk()
+             ->assertJsonPath('content', 'Updated')
+             ->assertJsonPath('status', true);
+    }
+
+    /**
+     * Partial update: only status supplied — content must remain unchanged.
+     * Typical use case is the checkbox toggle on the todo list.
+     */
+    public function test_put_todo_updates_only_status_when_content_omitted(): void
+    {
+        $todo = Todo::factory()->create(['content' => 'Keep this', 'status' => false]);
+
+        $this->putJson("/api/todos/{$todo->id}", ['status' => true])
+             ->assertOk()
+             ->assertJsonPath('content', 'Keep this')
+             ->assertJsonPath('status', true);
+    }
+
+    /**
+     * Edge case: empty body with no fields at all is meaningless — the client
+     * must supply at least one field to change, otherwise return 422.
+     */
+    public function test_put_todo_requires_at_least_one_field(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->putJson("/api/todos/{$todo->id}", [])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['content', 'status']);
+    }
+
+    /**
+     * Edge case: content cannot be updated to an empty string —
+     * the todo would become meaningless.
+     */
+    public function test_put_todo_content_cannot_be_empty_string(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => ''])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['content']);
+    }
+
+    /**
+     * Edge case: status must remain boolean — a string like "true" must
+     * be rejected to prevent silent corruption of the boolean column.
+     */
+    public function test_put_todo_status_must_be_boolean(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->putJson("/api/todos/{$todo->id}", ['status' => 'yes'])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['status']);
+    }
+
+    /**
+     * Trying to update a todo that does not exist must return 404.
+     * The client should handle this by removing the item from the UI.
+     */
+    public function test_put_todo_returns_404_for_nonexistent_id(): void
+    {
+        $this->putJson('/api/todos/999', ['content' => 'Ghost'])
+             ->assertNotFound();
+    }
+
+    /**
+     * The update response must include all todo fields so the client
+     * can replace the local record without a follow-up GET.
+     */
+    public function test_put_todo_response_has_correct_structure(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => 'Structured'])
+             ->assertOk()
+             ->assertJsonStructure(['id', 'content', 'status', 'created_at', 'updated_at']);
+    }
+
+    // -------------------------------------------------------------------------
+    // DELETE /api/todos/{id}
+    // -------------------------------------------------------------------------
+
+    /**
+     * Happy path: deleting an existing todo returns 204 No Content
+     * and removes the record from the database.
+     */
+    public function test_delete_todo_removes_todo_and_returns_204(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->deleteJson("/api/todos/{$todo->id}")
+             ->assertNoContent();
+
+        $this->assertDatabaseMissing('todos', ['id' => $todo->id]);
+    }
+
+    /**
+     * Edge case: deleting a non-existent ID must return 404.
+     * Attempting to delete something that is already gone should not
+     * silently succeed — the client should know the resource was not found.
+     */
+    public function test_delete_todo_returns_404_for_nonexistent_id(): void
+    {
+        $this->deleteJson('/api/todos/999')
+             ->assertNotFound();
+    }
+
+    /**
+     * Edge case: deleting with a non-numeric route segment (e.g. "abc")
+     * must return 404 — the route expects an integer ID only.
+     */
+    public function test_delete_todo_returns_404_for_non_numeric_id(): void
+    {
+        $this->deleteJson('/api/todos/abc')
+             ->assertNotFound();
+    }
+
+    /**
+     * Edge case: re-deleting an already-deleted todo must return 404.
+     * Two consecutive DELETEs on the same ID should not both succeed —
+     * idempotency at the HTTP level is fine, but the second call must
+     * signal the resource is gone.
+     */
+    public function test_delete_todo_returns_404_when_already_deleted(): void
+    {
+        $todo = Todo::factory()->create();
+        $todo->delete();
+
+        $this->deleteJson("/api/todos/{$todo->id}")
+             ->assertNotFound();
+    }
 }
