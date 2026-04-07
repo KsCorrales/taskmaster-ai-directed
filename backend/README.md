@@ -105,8 +105,9 @@ Every HTTP request travels through the same pipeline before a response is return
 │  · Own all business decisions:                                   │
 │      - Default status to false when not provided                 │
 │      - Order results newest-first                                │
-│      - Apply status filters (active / completed / all)           │
+│      - Apply status filters via when() + a FILTER_STATUS map     │
 │      - Allow partial updates (only supplied fields change)       │
+│      - Guard create/update/delete against model event failures   │
 │  · Framework-agnostic: no Request or Response objects here       │
 │  · Calls the Model to read/write data                            │
 └─────────────────────────────┬────────────────────────────────────┘
@@ -249,7 +250,7 @@ All errors on `/api/*` routes return JSON regardless of the client's `Accept` he
 |---|---|
 | `422 Unprocessable Entity` | Validation failed — body contains an `errors` object |
 | `404 Not Found` | Todo with the given ID does not exist |
-| `500 Internal Server Error` | Unexpected server error |
+| `500 Internal Server Error` | A model event prevented the operation (create/update/delete cancelled server-side) |
 
 **Validation error example:**
 ```json
@@ -260,6 +261,16 @@ All errors on `/api/*` routes return JSON regardless of the client's `Accept` he
   }
 }
 ```
+
+### Model event error handling
+
+Every mutating operation (`create`, `update`, `delete`) checks whether Eloquent actually persisted the change. If a model event cancels the operation, the service throws a `RuntimeException` which Laravel converts to a `500` JSON response. This prevents the API from returning a success status code when no change was made in the database.
+
+| Operation | Guard |
+|---|---|
+| `create` | `$todo->exists === false` after `Todo::create()` |
+| `update` | `$todo->update()` returns `false` |
+| `delete` | `$todo->delete()` returns `false` |
 
 ---
 
@@ -285,11 +296,11 @@ php artisan test
 php artisan test --filter=TodoApiTest
 ```
 
-**30 tests · 89 assertions** — all passing.
+**33 tests · 95 assertions** — all passing.
 
 | Suite | Cases covered |
 |---|---|
 | `GET /todos` | Empty list, newest-first ordering, response structure, all filter values, unknown filter fallback |
-| `POST /todos` | Happy path, default status, all validation rules (required, empty, non-string, boolean, max length), response structure |
-| `PUT /todos/{id}` | Full update, partial content-only, partial status-only, empty body 422, validation, 404 on missing ID, response structure |
-| `DELETE /todos/{id}` | 204 + DB removal, 404 on missing ID, 404 on non-numeric ID, 404 on double-delete |
+| `POST /todos` | Happy path, default status, all validation rules (required, empty, non-string, boolean, max:255), response structure, 500 on model event cancellation |
+| `PUT /todos/{id}` | Full update, partial content-only, partial status-only, empty body 422, validation, 404 on missing ID, response structure, 500 on model event cancellation |
+| `DELETE /todos/{id}` | 204 + DB removal, 404 on missing ID, 404 on non-numeric ID, 404 on double-delete, 500 on model event cancellation |
