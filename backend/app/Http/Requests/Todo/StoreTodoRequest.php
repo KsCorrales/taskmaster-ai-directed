@@ -14,7 +14,7 @@ class StoreTodoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['required', 'string', 'min:1'],
+            'content' => ['required', 'string', 'min:1', 'max:255'],
             'status'  => ['sometimes', 'boolean'],
         ];
     }

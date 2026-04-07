@@ -183,6 +183,17 @@ class TodoApiTest extends TestCase
     }
 
     /**
+     * Edge case: content exceeding 255 characters must be rejected to prevent
+     * database column overflow and enforce a sensible task description limit.
+     */
+    public function test_post_todos_content_cannot_exceed_255_characters(): void
+    {
+        $this->postJson('/api/todos', ['content' => str_repeat('a', 256)])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['content']);
+    }
+
+    /**
      * Edge case: status must be boolean — passing a string like "yes" must
      * be rejected so the boolean column is never corrupted.
      */
@@ -275,6 +286,19 @@ class TodoApiTest extends TestCase
         $todo = Todo::factory()->create();
 
         $this->putJson("/api/todos/{$todo->id}", ['content' => ''])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['content']);
+    }
+
+    /**
+     * Edge case: content update exceeding 255 characters must be rejected
+     * for the same reason as on creation — consistent column constraint enforcement.
+     */
+    public function test_put_todo_content_cannot_exceed_255_characters(): void
+    {
+        $todo = Todo::factory()->create();
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => str_repeat('a', 256)])
              ->assertUnprocessable()
              ->assertJsonValidationErrors(['content']);
     }
