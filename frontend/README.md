@@ -188,7 +188,7 @@ Matches the provided design mockups from the `/design` folder.
 | Add task | `TodoForm` → Enter key → `addTodo` action |
 | Mark completed | `TodoItem` toggle button → `toggleTodo` action |
 | Delete task | `TodoItem` × button → `removeTodo` action |
-| Filter tasks | `TodoFilter` tabs → `SET_FILTER` mutation → `filteredTodos` getter |
+| Filter tasks | `TodoFilter` tabs → `setFilter` action → backend re-fetch → `filteredTodos` getter |
 | Clear completed | Footer button → `clearCompleted` action |
 | Items left count | `activeCount` getter |
 | Light/dark toggle | `isDark` ref on `index.vue` → adds/removes `dark` class on `<html>` |
@@ -205,15 +205,15 @@ npm test
 npm run test:watch
 ```
 
-**61 tests — all passing.**
+**62 tests — all passing.**
 
 | Suite | File | Cases |
 |---|---|---|
 | Store mutations | `tests/store/todos.spec.ts` | SET_TODOS, ADD_TODO, UPDATE_TODO, REMOVE_TODO, SET_FILTER, SET_LOADING, SET_ERROR + edge cases |
 | Store getters | `tests/store/todos.spec.ts` | filteredTodos (all/active/completed), activeCount (0 and N), hasCompleted |
-| Store actions | `tests/store/todos.spec.ts` | fetchTodos success/error, addTodo, toggleTodo, removeTodo, clearCompleted |
+| Store actions | `tests/store/todos.spec.ts` | fetchTodos success/error, addTodo, toggleTodo, removeTodo, clearCompleted, setFilter |
 | Utils | `tests/utils/todos.spec.ts` | getTodos (filter param, no param, error), createTodo, updateTodo, deleteTodo |
 | TodoForm | `tests/components/TodoForm.spec.ts` | Render, dispatch on Enter, empty guard, whitespace guard, trim |
 | TodoItem | `tests/components/TodoItem.spec.ts` | Render, completed styling, toggle dispatch, delete dispatch, double-click |
 | TodoList | `tests/components/TodoList.spec.ts` | Empty state, item count, singular/plural, clear completed visibility, loading, error |
-| TodoFilter | `tests/components/TodoFilter.spec.ts` | Render all options, active marker, all three SET_FILTER commits, re-click active |
+| TodoFilter | `tests/components/TodoFilter.spec.ts` | Render all options, active marker, all three setFilter dispatches, re-click active |
