@@ -65,7 +65,20 @@ Follow these steps **in order**. Do not skip or reorder them.
 - State lives in the Vuex store (`store/todos.ts`) — never in local component state for shared data
 - Define: `state`, `mutations`, `actions`, `getters`
 - Actions call the domain utils (Step 3), then commit mutations
-- Getters derive filtered lists (all, active, completed) from state
+- **Filtering uses the backend**: filter actions must commit the filter mutation AND dispatch `fetchTodos` so the backend applies the filter. Example pattern:
+  ```ts
+  async setFilter({ commit, dispatch }, filter: TodoState['filter']) {
+    commit('SET_FILTER', filter)
+    await dispatch('fetchTodos')
+  }
+  // fetchTodos reads state.filter and passes it to the API util:
+  async fetchTodos({ commit, state }) {
+    const filter = state.filter !== 'all' ? state.filter : undefined
+    const todos = await getTodos(filter)
+    commit('SET_TODOS', todos)
+  }
+  ```
+- Getters (`filteredTodos`) may still do client-side filtering as a secondary layer, but the primary source of truth is the backend-filtered `items` list
 - Commit: `Add Vuex store for <feature>`
 
 ---
@@ -154,6 +167,8 @@ Component
 - No business logic in components
 - No shared state in local `ref()` — use the Vuex store
 - No duplicated fetch logic — extend `utils/todos.ts`, don't copy it
+- No client-side-only filtering when the backend supports a filter param — always delegate filtering to the backend via a `setFilter` action that re-fetches
+- Never commit `SET_FILTER` directly from a component — always dispatch `setFilter` so the re-fetch is guaranteed
 
 ## $ARGUMENTS
 The component or feature to implement: **$ARGUMENTS**
