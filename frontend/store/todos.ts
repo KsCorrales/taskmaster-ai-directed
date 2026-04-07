@@ -70,17 +70,23 @@ export const todosModule: Module<TodoState, any> = {
   },
 
   actions: {
-    async fetchTodos({ commit }) {
+    async fetchTodos({ commit, state }) {
       commit('SET_LOADING', true)
       commit('SET_ERROR', null)
       try {
-        const todos = await getTodos()
+        const filter = state.filter !== 'all' ? state.filter : undefined
+        const todos = await getTodos(filter)
         commit('SET_TODOS', todos)
       } catch (err: any) {
         commit('SET_ERROR', err?.message ?? 'Failed to load todos')
       } finally {
         commit('SET_LOADING', false)
       }
+    },
+
+    async setFilter({ commit, dispatch }, filter: TodoState['filter']) {
+      commit('SET_FILTER', filter)
+      await dispatch('fetchTodos')
     },
 
     async addTodo({ commit }, content: string) {

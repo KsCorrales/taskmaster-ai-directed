@@ -257,6 +257,22 @@ describe('Vuex todos store — actions', () => {
   })
 
   /**
+   * setFilter commits the new filter then re-fetches from the backend
+   * so the displayed list reflects the backend filter result.
+   */
+  it('setFilter commits SET_FILTER and re-fetches todos', async () => {
+    const { getTodos } = await import('~/utils/todos')
+    const filtered = [makeTodo({ id: 5, status: false })]
+    vi.mocked(getTodos).mockResolvedValue(filtered)
+
+    const store = makeStore()
+    await store.dispatch('todos/setFilter', 'active')
+
+    expect(store.state.todos.filter).toBe('active')
+    expect(store.state.todos.items).toEqual(filtered)
+  })
+
+  /**
    * Edge case: clearCompleted must remove all completed todos in one operation
    * without needing individual DELETE calls — it dispatches removeTodo per item.
    */

@@ -3,19 +3,21 @@ import { mount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import TodoFilter from '~/components/TodoFilter.vue'
 
-const makeStore = (filter = 'all', dispatch = vi.fn()) =>
-  createStore({
+const makeStore = (filter = 'all') => {
+  const store = createStore({
     modules: {
       todos: {
         namespaced: true,
         state: () => ({ filter }),
         mutations: { SET_FILTER: (state: any, f: string) => { state.filter = f } },
-        actions: {},
+        actions: { setFilter: vi.fn() },
         getters: {},
       },
     },
-    dispatch,
   })
+  vi.spyOn(store, 'dispatch')
+  return store
+}
 
 describe('TodoFilter', () => {
   /**
@@ -46,49 +48,46 @@ describe('TodoFilter', () => {
   })
 
   /**
-   * Clicking a filter must commit SET_FILTER with the correct value.
+   * Clicking a filter must dispatch setFilter with the correct value,
+   * which triggers a backend re-fetch with the selected filter.
    */
-  it('commits SET_FILTER with "active" when Active is clicked', async () => {
+  it('dispatches setFilter with "active" when Active is clicked', async () => {
     const store = makeStore('all')
-    const commitSpy = vi.spyOn(store, 'commit')
     const wrapper = mount(TodoFilter, { global: { plugins: [store] } })
 
     await wrapper.find('[data-filter="active"]').trigger('click')
 
-    expect(commitSpy).toHaveBeenCalledWith('todos/SET_FILTER', 'active')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/setFilter', 'active')
   })
 
-  it('commits SET_FILTER with "completed" when Completed is clicked', async () => {
+  it('dispatches setFilter with "completed" when Completed is clicked', async () => {
     const store = makeStore('all')
-    const commitSpy = vi.spyOn(store, 'commit')
     const wrapper = mount(TodoFilter, { global: { plugins: [store] } })
 
     await wrapper.find('[data-filter="completed"]').trigger('click')
 
-    expect(commitSpy).toHaveBeenCalledWith('todos/SET_FILTER', 'completed')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/setFilter', 'completed')
   })
 
-  it('commits SET_FILTER with "all" when All is clicked', async () => {
+  it('dispatches setFilter with "all" when All is clicked', async () => {
     const store = makeStore('active')
-    const commitSpy = vi.spyOn(store, 'commit')
     const wrapper = mount(TodoFilter, { global: { plugins: [store] } })
 
     await wrapper.find('[data-filter="all"]').trigger('click')
 
-    expect(commitSpy).toHaveBeenCalledWith('todos/SET_FILTER', 'all')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/setFilter', 'all')
   })
 
   /**
-   * Edge case: clicking the already-active filter must still commit
+   * Edge case: clicking the already-active filter must still dispatch
    * (no-op on state but the click handler must not be swallowed).
    */
-  it('still commits when clicking the already-active filter', async () => {
+  it('still dispatches when clicking the already-active filter', async () => {
     const store = makeStore('all')
-    const commitSpy = vi.spyOn(store, 'commit')
     const wrapper = mount(TodoFilter, { global: { plugins: [store] } })
 
     await wrapper.find('[data-filter="all"]').trigger('click')
 
-    expect(commitSpy).toHaveBeenCalledWith('todos/SET_FILTER', 'all')
+    expect(store.dispatch).toHaveBeenCalledWith('todos/setFilter', 'all')
   })
 })

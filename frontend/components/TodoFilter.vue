@@ -31,6 +31,6 @@ const filters = [
 const currentFilter = computed(() => store.state.todos.filter)
 
 const setFilter = (value: string) => {
-  store.commit('todos/SET_FILTER', value)
+  store.dispatch('todos/setFilter', value)
 }
 </script>
