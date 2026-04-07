@@ -32,8 +32,8 @@ class TodoApiTest extends TestCase
      */
     public function test_get_todos_returns_all_todos_ordered_newest_first(): void
     {
-        $first  = Todo::factory()->create(['content' => 'First task']);
-        $second = Todo::factory()->create(['content' => 'Second task']);
+        $first  = Todo::factory()->create(['content' => 'First task',  'created_at' => now()->subSecond()]);
+        $second = Todo::factory()->create(['content' => 'Second task', 'created_at' => now()]);
 
         $response = $this->getJson('/api/todos');
 
