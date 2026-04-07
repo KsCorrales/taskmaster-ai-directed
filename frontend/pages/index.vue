@@ -34,10 +34,6 @@
         <TodoFilter />
       </div>
 
-      <!-- Hint -->
-      <p class="text-center mt-10 text-sm text-light-muted dark:text-dark-muted">
-        Drag and drop to reorder list
-      </p>
     </div>
   </main>
 </template>
