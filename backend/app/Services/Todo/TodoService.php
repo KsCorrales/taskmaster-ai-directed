@@ -8,22 +8,29 @@ use Illuminate\Database\Eloquent\Collection;
 class TodoService
 {
     /**
+     * Maps accepted filter values to their boolean status equivalent.
+     * Any filter not in this map is treated as "no filter" (return all).
+     */
+    private const FILTER_STATUS = [
+        'active'    => false,
+        'completed' => true,
+    ];
+
+    /**
      * Return all todos newest first, optionally filtered by status.
      *
-     * Accepted filter values: 'active' (status=false), 'completed' (status=true).
-     * Any other value (including null / 'all') returns everything.
+     * Uses when() to conditionally apply the status constraint only when
+     * the filter maps to a known value — no if/else branching needed.
      */
     public function getAll(?string $filter): Collection
     {
-        $query = Todo::query()->latest();
-
-        if ($filter === 'active') {
-            $query->where('status', false);
-        } elseif ($filter === 'completed') {
-            $query->where('status', true);
-        }
-
-        return $query->get();
+        return Todo::query()
+            ->latest()
+            ->when(
+                array_key_exists($filter, self::FILTER_STATUS),
+                fn ($q) => $q->where('status', self::FILTER_STATUS[$filter])
+            )
+            ->get();
     }
 
     /**
