@@ -392,4 +392,26 @@ class TodoApiTest extends TestCase
         $this->deleteJson("/api/todos/{$todo->id}")
              ->assertNotFound();
     }
+
+    /**
+     * Edge case: if a model event prevents deletion (delete() returns false),
+     * the API must return 500 instead of silently returning 204.
+     * Silently succeeding when the record was NOT removed would leave the
+     * client with a stale UI showing a todo that still exists in the DB.
+     */
+    public function test_delete_todo_returns_500_when_deletion_is_prevented(): void
+    {
+        $todo = Todo::factory()->create();
+
+        // Register a one-time deleting listener that cancels the deletion
+        Todo::deleting(function () {
+            return false;
+        });
+
+        $this->deleteJson("/api/todos/{$todo->id}")
+             ->assertStatus(500);
+
+        // The record must still exist — the cancellation was effective
+        $this->assertDatabaseHas('todos', ['id' => $todo->id]);
+    }
 }

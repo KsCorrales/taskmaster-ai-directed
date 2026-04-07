@@ -50,9 +50,17 @@ class TodoService
 
     /**
      * Permanently remove the todo from storage.
+     *
+     * Eloquent's delete() returns bool|null — false means a model event
+     * prevented the deletion. We treat that as a server-side failure rather
+     * than silently returning 204 to the client.
+     *
+     * @throws \RuntimeException when deletion is prevented by a model event
      */
     public function delete(Todo $todo): void
     {
-        $todo->delete();
+        if ($todo->delete() === false) {
+            throw new \RuntimeException("Todo #{$todo->id} could not be deleted.");
+        }
     }
 }
