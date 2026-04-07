@@ -36,4 +36,23 @@ class TodoService
             'status'  => $status,
         ]);
     }
+
+    /**
+     * Update only the fields that were supplied — partial updates are
+     * intentional so the frontend can toggle status without sending content.
+     */
+    public function update(Todo $todo, array $data): Todo
+    {
+        $todo->update($data);
+
+        return $todo->fresh();
+    }
+
+    /**
+     * Permanently remove the todo from storage.
+     */
+    public function delete(Todo $todo): void
+    {
+        $todo->delete();
+    }
 }
