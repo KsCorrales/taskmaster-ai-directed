@@ -215,6 +215,23 @@ class TodoApiTest extends TestCase
              ->assertJsonStructure(['id', 'content', 'status', 'created_at', 'updated_at']);
     }
 
+    /**
+     * Edge case: if a model event prevents creation (create() returns false),
+     * the API must return 500 instead of crashing with a TypeError or
+     * silently returning a 201 with no persisted record.
+     */
+    public function test_post_todos_returns_500_when_creation_is_prevented(): void
+    {
+        Todo::creating(function () {
+            return false;
+        });
+
+        $this->postJson('/api/todos', ['content' => 'Blocked task'])
+             ->assertStatus(500);
+
+        $this->assertDatabaseMissing('todos', ['content' => 'Blocked task']);
+    }
+
     // -------------------------------------------------------------------------
     // PUT /api/todos/{id}
     // -------------------------------------------------------------------------
@@ -337,6 +354,25 @@ class TodoApiTest extends TestCase
         $this->putJson("/api/todos/{$todo->id}", ['content' => 'Structured'])
              ->assertOk()
              ->assertJsonStructure(['id', 'content', 'status', 'created_at', 'updated_at']);
+    }
+
+    /**
+     * Edge case: if a model event prevents the update (update() returns false),
+     * the API must return 500 — the original data must remain unchanged
+     * and the client must not receive a 200 with stale data.
+     */
+    public function test_put_todo_returns_500_when_update_is_prevented(): void
+    {
+        $todo = Todo::factory()->create(['content' => 'Original']);
+
+        Todo::updating(function () {
+            return false;
+        });
+
+        $this->putJson("/api/todos/{$todo->id}", ['content' => 'Blocked update'])
+             ->assertStatus(500);
+
+        $this->assertDatabaseHas('todos', ['id' => $todo->id, 'content' => 'Original']);
     }
 
     // -------------------------------------------------------------------------
