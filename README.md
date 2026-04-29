@@ -21,7 +21,7 @@ The two project READMEs below show the actual implementation and the reasoning b
 
 ### Frontend — Nuxt 3 + Vuex
 - **Nuxt server proxy layer** — the browser never talks to Laravel directly; all requests go through `server/api/todos/`
-- **Vuex** store with namespaced `todos` module: `state`, `mutations`, `getters`, `actions`
+- **Vuex** store with namespaced `todos` module: `state`, `mutations`, `getters`, `actions` *(For a greenfield Nuxt 3 project I would recommend [**Pinia**](https://pinia.vuejs.org/) — it is the officially recommended store for Vue 3 and has a simpler API, better TS inference, and active maintenance. Vuex was used here only because the assessment required it.)*
 - **Backend filtering** — selecting All / Active / Completed triggers a re-fetch via the Laravel filter endpoint (`setFilter` action)
 - **4 components:** `TodoForm`, `TodoItem`, `TodoList`, `TodoFilter`
 - **Light / dark theme** toggle with hero background image swap; Josefin Sans font; responsive at 375px and 1440px

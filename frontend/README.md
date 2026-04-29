@@ -130,6 +130,8 @@ Laravel response
 
 ## State Management (Vuex)
 
+> **Note on the choice of Vuex.** For a new Nuxt 3 / Vue 3 project today I would recommend **Pinia**: it is the officially recommended store for Vue 3, has a smaller and simpler API (no mutations boilerplate), better TypeScript inference out of the box, first-class Nuxt integration, and an actively maintained DevTools experience. Vuex is in maintenance mode. **Vuex was used here because the assessment explicitly required it** — outside of that constraint, Pinia would be the default pick.
+
 ```
 state
   items: Todo[]         — full list from the API, newest first
